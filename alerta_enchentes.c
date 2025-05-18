@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include "lib/display.h"
 #include "lib/font.h"
+#include "lib/buzzer.h"
+#include "lib/buttons.h"
 
 #define joy_y 26
 #define joy_x 27
@@ -15,6 +17,14 @@
 volatile uint16_t last_x = 0;
 volatile uint16_t last_y = 0;
 volatile bool alert_mode = false;
+
+#define ALERTA_NIVEL_AGUA 1
+#define ALERTA_VOLUME_CHUVA 2
+#define ALERTA_AMBOS 3
+
+// Variáveis compartilhadas
+volatile uint8_t tipo_alerta = 0;
+volatile bool alerta_sonoro_ativo = false;
 
 #define green 11
 #define blue 12
@@ -112,56 +122,54 @@ void vLedGreenTask(void *params)
 volatile bool alert_triggered = false;
 volatile bool needs_display_clear = false;
 
-// Task de Alerta Modificada
+// Task de Alerta
 void vAlertTask(void *params) {
     while (true) {
         float nivel_agua = (last_x / 4095.0f) * 100.0f;
         float volume_chuva = (last_y / 4095.0f) * 100.0f;
         
-        if (nivel_agua > 70.0f || volume_chuva > 80.0f) {
-            if (!alert_triggered) {
-                alert_triggered = true;
-                needs_display_clear = true;
-            }
+        bool alerta_agua = (nivel_agua > 70.0f);
+        bool alerta_chuva = (volume_chuva > 80.0f);
+        
+        if (alerta_agua && alerta_chuva) {
+            tipo_alerta = ALERTA_AMBOS;
+        } else if (alerta_agua) {
+            tipo_alerta = ALERTA_NIVEL_AGUA;
+        } else if (alerta_chuva) {
+            tipo_alerta = ALERTA_VOLUME_CHUVA;
         } else {
-            if (alert_triggered) {
-                alert_triggered = false;
-                needs_display_clear = true;
-            }
+            tipo_alerta = 0;
         }
+        
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
-// Task de Display Reestruturada
+// Task de Display 
 void vDisplayTask(void *params) {
     char displayText[50];
     uint16_t prev_x = 0xFFFF, prev_y = 0xFFFF;
-    bool current_display_mode = false; // false = normal, true = alert
-    
+    uint8_t prev_alert_type = 0;
+    bool needs_full_clear = true;
+
     while (true) {
-        // Verifica se precisa mudar o modo de exibição
-        if (needs_display_clear) {
-            ssd1306_fill(&ssd, !cor);
-            current_display_mode = alert_triggered;
-            needs_display_clear = false;
+        // Verifica se houve mudança no estado de alerta
+        if (tipo_alerta != prev_alert_type) {
+            needs_full_clear = true;
+            prev_alert_type = tipo_alerta;
         }
-        
-        if (alert_triggered) {
-            // Modo Alerta
-            escrever(&ssd, "ALERTA!", 30, 20, cor);
-            
-            char buffer[20];
-            snprintf(buffer, sizeof(buffer), "Agua: %.0f%%", (last_x / 4095.0f) * 100.0f);
-            escrever(&ssd, buffer, 10, 40, cor);
-            
-            snprintf(buffer, sizeof(buffer), "Chuva: %.0f%%", (last_y / 4095.0f) * 100.0f);
-            escrever(&ssd, buffer, 10, 55, cor);
-        } else {
-            // Modo Normal
+
+        // Limpeza do display quando necessário
+        if (needs_full_clear) {
+            ssd1306_fill(&ssd, !cor);
+            needs_full_clear = false;
+        }
+
+        if (tipo_alerta == 0) {
+            // MODO NORMAL - Exibe valores dos sensores
             if (last_x != prev_x) {
                 prev_x = last_x;
-                float Nivel_agua = (last_x / 4095.0f)*100.0f;
+                float Nivel_agua = (last_x / 4095.0f) * 100.0f;
                 limpar_area(0, 0, 128, 16); // Limpa área maior
                 escrever(&ssd, "Nivel da agua", 10, 2, cor);
                 snprintf(displayText, sizeof(displayText), "%.0f%%", Nivel_agua);
@@ -170,36 +178,108 @@ void vDisplayTask(void *params) {
 
             if (last_y != prev_y) {
                 prev_y = last_y;
-                float volume_chuva = (last_y / 4095.0f)*100.0f;
+                float volume_chuva = (last_y / 4095.0f) * 100.0f;
                 limpar_area(0, 30, 128, 16); // Limpa área maior
                 escrever(&ssd, "Volume de Chuva", 5, 26, cor);
                 snprintf(displayText, sizeof(displayText), "%.0f%%", volume_chuva);
                 escrever(&ssd, displayText, 60, 38, cor);
             }
+        } else {
+            // MODO ALERTA - Exibe mensagem de alerta
+            char alert_title[20];
+            char alert_detail_chuva[30];
+            char alert_detail_agua[30];
+            
+            switch(tipo_alerta) {
+                case ALERTA_NIVEL_AGUA:
+                    strcpy(alert_title, "ALERTA DE AGUA");
+                    snprintf(alert_detail_agua, sizeof(alert_detail_agua), "Agua: %.0f%% MAX", (last_x / 4095.0f) * 100.0f);
+                    snprintf(alert_detail_chuva, sizeof(alert_detail_chuva), "Chuva: %.0f%% MAX", (last_y / 4095.0f) * 100.0f);
+                    break;
+                    
+                case ALERTA_VOLUME_CHUVA:
+                    strcpy(alert_title, "ALERTA DE CHUVA");
+                    snprintf(alert_detail_agua, sizeof(alert_detail_agua), "Agua: %.0f%% MAX", (last_x / 4095.0f) * 100.0f);
+                    snprintf(alert_detail_chuva, sizeof(alert_detail_chuva), "Chuva: %.0f%% MAX", (last_y / 4095.0f) * 100.0f);
+                    break;
+                    
+                case ALERTA_AMBOS:
+                    strcpy(alert_title, "ALERTA MAXIMO");
+                    snprintf(alert_detail_agua, sizeof(alert_detail_agua), "Agua: %.0f%% MAX", (last_x / 4095.0f) * 100.0f);
+                    snprintf(alert_detail_chuva, sizeof(alert_detail_chuva), "Chuva: %.0f%% MAX", (last_y / 4095.0f) * 100.0f);
+                    break;
+            }
+
+            // Exibe cabeçalho do alerta
+            escrever(&ssd, alert_title, 5, 5, cor);
+            
+            // Linha divisória
+            ssd1306_hline(&ssd, 0, 127, 15, cor);
+            
+            // Detalhes do alerta
+            escrever(&ssd, alert_detail_chuva, 5, 30, cor);
+            escrever(&ssd, alert_detail_agua, 5, 45, cor);
         }
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
-// Modo BOOTSEL com botão B
-#include "pico/bootrom.h"
-#define botaoB 6
-void gpio_irq_handler(uint gpio, uint32_t events)
-{
-    reset_usb_boot(0, 0);
+// Variável compartilhada para controle do buzzer
+volatile bool buzzer_active = false;
+
+// Task do Buzzer
+void vBuzzerTask(void *params) {
+    iniciar_buzzer();
+    
+    while (true) {
+        if (tipo_alerta != 0) {
+            switch(tipo_alerta) {
+                case ALERTA_NIVEL_AGUA:
+                    // Padrão para alerta de nível d'água (2 beeps longos)
+                    tocar_nota(800, 400);
+                    vTaskDelay(pdMS_TO_TICKS(300));
+                    tocar_nota(800, 400);
+                    break;
+                    
+                case ALERTA_VOLUME_CHUVA:
+                    // Padrão para alerta de chuva (3 beeps curtos agudos)
+                    tocar_nota(1200, 150);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    tocar_nota(1200, 150);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    tocar_nota(1200, 150);
+                    break;
+                    
+                case ALERTA_AMBOS:
+                    // Padrão para ambos alertas (alternância grave-agudo)
+                    tocar_nota(600, 200);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    tocar_nota(1200, 200);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    tocar_nota(600, 200);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    tocar_nota(1200, 200);
+                    break;
+            }
+            // Pausa antes de repetir
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        } else {
+            gpio_put(buzzerA, 0);
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+    }
 }
 
-int main() {   
+int main() {  
+    iniciar_buzzer(); 
     init_display();
     ssd1306_fill(&ssd, !cor);
     escrever(&ssd, "INICIANDO!!!", 10, 10, cor);
     sleep_ms(1000);
     ssd1306_fill(&ssd, !cor);
 
-    // BOOTSEL button setup
-    gpio_init(botaoB);
-    gpio_set_dir(botaoB, GPIO_IN);
-    gpio_pull_up(botaoB);
+    iniciar_botoes();
     gpio_set_irq_enabled_with_callback(botaoB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
     stdio_init_all();
@@ -215,7 +295,8 @@ int main() {
     xTaskCreate(vLedBlueTask, "LED Blue", 256, NULL, 1, NULL);
     xTaskCreate(vLedGreenTask, "LED Green", 256, NULL, 1, NULL);
     xTaskCreate(vDisplayTask, "Display", 512, NULL, 2, NULL);
-    xTaskCreate(vAlertTask, "Alert", 256, NULL, 3, NULL); // Higher priority
+    xTaskCreate(vAlertTask, "Alert", 256, NULL, 3, NULL);
+    xTaskCreate(vBuzzerTask, "Buzzer", 256, NULL, 2, NULL);
     
     vTaskStartScheduler();
     panic_unsupported();
