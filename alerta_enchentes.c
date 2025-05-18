@@ -25,6 +25,8 @@ volatile bool alert_mode = false;
 // Variáveis compartilhadas
 volatile uint8_t tipo_alerta = 0;
 volatile bool alerta_sonoro_ativo = false;
+volatile bool alert_triggered = false;
+volatile bool needs_display_clear = false;
 
 #define green 11
 #define blue 12
@@ -40,6 +42,11 @@ typedef enum {
 } system_mode_t;
 
 system_mode_t current_mode = NORMAL_MODE;
+
+void iniciar_rgb() {
+    gpio_init(red);
+    gpio_set_dir(red, GPIO_OUT);
+}
 
 // Tarefa do potênciometro y
 void vJoy_y_Task(void *params)
@@ -87,10 +94,17 @@ void vLedBlueTask(void *params)
         uint16_t y_pos;
         if (xQueueReceive(xQueueJoyY, &y_pos, portMAX_DELAY))
         {
-            // Converte de 0–4095 para 0–65535 (16 bits PWM)
-            uint16_t pwm_y_level = (y_pos << 4); // rápido e simples
-            pwm_set_gpio_level(blue, pwm_y_level);
-            printf("[Tarefa: %s] PWM ajustado para: %u\n", pcTaskGetName(NULL), pwm_y_level);
+            float nivel_agua = (last_x / 4095.0f) * 100.0f;
+            float volume_chuva = (y_pos / 4095.0f) * 100.0f;
+            
+            // Só ajusta o PWM do LED azul se ambos os valores estiverem abaixo dos limites
+            if (nivel_agua < 70.0f && volume_chuva < 80.0f) {
+                uint16_t pwm_y_level = (y_pos << 4); // rápido e simples
+                pwm_set_gpio_level(blue, pwm_y_level);
+                printf("[Tarefa: %s] PWM ajustado para: %u\n", pcTaskGetName(NULL), pwm_y_level);
+            } else {
+                pwm_set_gpio_level(blue, 0); // Desliga o LED azul
+            }
             last_y = y_pos;
         }
     }
@@ -109,18 +123,40 @@ void vLedGreenTask(void *params)
         uint16_t x_pos;
         if (xQueueReceive(xQueueJoyX, &x_pos, portMAX_DELAY))
         {
-            // Converte de 0–4095 para 0–65535 (16 bits PWM)
-            uint16_t pwm_x_level = (x_pos << 4); // rápido e simples
-            pwm_set_gpio_level(green, pwm_x_level);
-            printf("[Tarefa: %s] PWM ajustado para: %u\n", pcTaskGetName(NULL), pwm_x_level);
+            float nivel_agua = (x_pos / 4095.0f) * 100.0f;
+            float volume_chuva = (last_y / 4095.0f) * 100.0f;
+            
+            // Só ajusta o PWM do LED verde se ambos os valores estiverem abaixo dos limites
+            if (nivel_agua < 70.0f && volume_chuva < 80.0f) {
+                uint16_t pwm_x_level = (x_pos << 4); // rápido e simples
+                pwm_set_gpio_level(green, pwm_x_level);
+                printf("[Tarefa: %s] PWM ajustado para: %u\n", pcTaskGetName(NULL), pwm_x_level);
+            } else {
+                pwm_set_gpio_level(green, 0); // Desliga o LED verde
+            }
             last_x = x_pos;
         }
     }
 }
 
-// Variáveis globais atualizadas
-volatile bool alert_triggered = false;
-volatile bool needs_display_clear = false;
+// Task led de alerta
+void vLedRedTask(void *params)
+{
+    while (true)
+    {
+        float nivel_agua = (last_x / 4095.0f) * 100.0f;
+        float volume_chuva = (last_y / 4095.0f) * 100.0f;
+        
+        // Aciona o LED vermelho se qualquer um dos valores ultrapassar os limites
+        if (nivel_agua >= 70.0f || volume_chuva >= 80.0f) {
+            gpio_put(red, 1); // Liga o LED vermelho
+        } else {
+            gpio_put(red, 0); // Desliga o LED vermelho
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(200)); // Verifica a cada 200ms
+    }
+}
 
 // Task de Alerta
 void vAlertTask(void *params) {
@@ -272,7 +308,8 @@ void vBuzzerTask(void *params) {
 }
 
 int main() {  
-    iniciar_buzzer(); 
+    iniciar_buzzer();
+    iniciar_rgb(); 
     init_display();
     ssd1306_fill(&ssd, !cor);
     escrever(&ssd, "INICIANDO!!!", 10, 10, cor);
@@ -294,6 +331,7 @@ int main() {
     xTaskCreate(vJoy_x_task, "Joystick X", 256, NULL, 1, NULL);
     xTaskCreate(vLedBlueTask, "LED Blue", 256, NULL, 1, NULL);
     xTaskCreate(vLedGreenTask, "LED Green", 256, NULL, 1, NULL);
+    xTaskCreate(vLedRedTask, "LED Red", 256, NULL, 1, NULL); 
     xTaskCreate(vDisplayTask, "Display", 512, NULL, 2, NULL);
     xTaskCreate(vAlertTask, "Alert", 256, NULL, 3, NULL);
     xTaskCreate(vBuzzerTask, "Buzzer", 256, NULL, 2, NULL);
