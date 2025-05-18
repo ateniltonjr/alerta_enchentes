@@ -32,6 +32,7 @@ include_directories(${CMAKE_SOURCE_DIR}/lib)
 add_executable(${PROJECT_NAME}  
         alerta_enchentes.c
         lib/ssd1306.c
+        lib/matrixws.c
         )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})

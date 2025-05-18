@@ -10,6 +10,7 @@
 #include "lib/font.h"
 #include "lib/buzzer.h"
 #include "lib/buttons.h"
+#include "lib/matrixws.h"
 
 #define joy_y 26
 #define joy_x 27
@@ -152,6 +153,27 @@ void vLedRedTask(void *params)
             gpio_put(red, 1); // Liga o LED vermelho
         } else {
             gpio_put(red, 0); // Desliga o LED vermelho
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(200)); // Verifica a cada 200ms
+    }
+}
+
+void vDesenhoTask(void *params)
+{
+    while (true)
+    {
+        float nivel_agua = (last_x / 4095.0f) * 100.0f;
+        float volume_chuva = (last_y / 4095.0f) * 100.0f;
+        
+        // Aciona o LED vermelho se qualquer um dos valores ultrapassar os limites
+        if (nivel_agua >= 70.0f || volume_chuva >= 80.0f) {
+            desenho_alerta();
+            vTaskDelay(pdMS_TO_TICKS(500));
+            desliga();
+            vTaskDelay(pdMS_TO_TICKS(500));
+        } else {
+            desliga();
         }
         
         vTaskDelay(pdMS_TO_TICKS(200)); // Verifica a cada 200ms
@@ -308,6 +330,7 @@ void vBuzzerTask(void *params) {
 }
 
 int main() {  
+    controle(PINO_MATRIZ);
     iniciar_buzzer();
     iniciar_rgb(); 
     init_display();
@@ -331,7 +354,8 @@ int main() {
     xTaskCreate(vJoy_x_task, "Joystick X", 256, NULL, 1, NULL);
     xTaskCreate(vLedBlueTask, "LED Blue", 256, NULL, 1, NULL);
     xTaskCreate(vLedGreenTask, "LED Green", 256, NULL, 1, NULL);
-    xTaskCreate(vLedRedTask, "LED Red", 256, NULL, 1, NULL); 
+    xTaskCreate(vLedRedTask, "LED Red", 256, NULL, 1, NULL);
+    xTaskCreate(vDesenhoTask, "Desenho na matriz", 256, NULL, 3, NULL);
     xTaskCreate(vDisplayTask, "Display", 512, NULL, 2, NULL);
     xTaskCreate(vAlertTask, "Alert", 256, NULL, 3, NULL);
     xTaskCreate(vBuzzerTask, "Buzzer", 256, NULL, 2, NULL);
