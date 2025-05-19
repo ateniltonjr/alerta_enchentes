@@ -28,12 +28,14 @@ void init_display()
   ssd1306_send_data(&ssd);
 }
 
-void escrever(ssd1306_t *display, const char *texto, uint8_t x, uint8_t y, bool cor) {
+void escrever(ssd1306_t *display, const char *texto, uint8_t x, uint8_t y, bool cor) 
+{
     ssd1306_draw_string(display, texto, x, y);
     ssd1306_send_data(display);
 }
 
-void limpar_area(uint8_t x, uint8_t y, uint8_t largura, uint8_t altura) {
+void limpar_area(uint8_t x, uint8_t y, uint8_t largura, uint8_t altura) 
+{
     for (uint8_t i = x; i < x + largura; i++) {
         for (uint8_t j = y; j < y + altura; j++) {
             ssd1306_pixel(&ssd, i, j, false);

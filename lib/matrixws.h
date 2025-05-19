@@ -9,7 +9,8 @@
 #define BRILHO 255   // Brilho dos LEDs (30% do máximo)
 
 // Definição da estrutura de cor para cada LED
-typedef struct {
+typedef struct 
+{
     uint8_t R, G, B;       // Componentes de cor: vermelho, verde e azul
 } npLED_t;
 

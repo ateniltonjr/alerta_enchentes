@@ -1,55 +1,55 @@
-#ifndef TAREFAS_UTILIZADAS_H
-#define TAREFAS_UTILIZADAS_H
+#ifndef TAREFAS_UTILIZADAS_H  // Verifica se o cabeçalho já foi incluído, evita redefinições
+#define TAREFAS_UTILIZADAS_H // Define o cabeçalho para controle de inclusão única
 
-#include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/adc.h"
-#include "hardware/pwm.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include <stdio.h>
-#include <string.h>
-#include "lib/display.h"
-#include "lib/font.h"
-#include "lib/buzzer.h"
-#include "lib/matrixws.h"
+#include "hardware/adc.h"// Biblioteca para controlar ADC (conversor analógico-digital) do joystick
+#include "FreeRTOS.h"   // Biblioteca principal do FreeRTOS
+#include <string.h>    // Biblioteca padrão de manipulação de strings
+#include <stdio.h>    // Biblioteca padrão para entrada e saída (ex: printf)
+#include "queue.h"   // Biblioteca do FreeRTOS para uso de filas
+#include "task.h"   // Biblioteca do FreeRTOS para manipulação de tarefas
 
-#define joy_y 26
-#define joy_x 27
+#include "lib/matrixws.h"// Biblioteca personalizada para controlar matriz de LEDs WS2812
+#include "lib/display.h"// Biblioteca personalizada para controle do display OLED
+#include "lib/buzzer.h"// Biblioteca personalizada para controle de buzzer
+#include "lib/font.h" // Biblioteca que define os caracteres (fontes) do display
 
-volatile uint16_t last_x = 0;
-volatile uint16_t last_y = 0;
-volatile bool alert_mode = false;
+#define joy_y 26 // Define o pino do joystick vertical (ADC1)
+#define joy_x 27// Define o pino do joystick horizontal (ADC0)
 
-#define ALERTA_NIVEL_AGUA 1
-#define ALERTA_VOLUME_CHUVA 2
-#define ALERTA_AMBOS 3
+volatile uint16_t last_x = 0;  // Armazena o último valor lido no eixo X (ADC0) — 'volatile' pois pode ser alterado por interrupções/tarefas
+volatile uint16_t last_y = 0; // Armazena o último valor lido no eixo Y (ADC1) — idem
 
-// Variáveis compartilhadas
-volatile uint8_t tipo_alerta = 0;
-volatile bool alerta_sonoro_ativo = false;
-volatile bool alert_triggered = false;
-volatile bool needs_display_clear = false;
-// Variável compartilhada para controle do buzzer
-volatile bool buzzer_active = false;
+volatile bool alert_mode = false;// Indica se o sistema está em modo de alerta
 
-#define green 11
-#define blue 12
-#define red 13
+#define ALERTA_NIVEL_AGUA 1    // Constante para alerta de nível de água
+#define ALERTA_VOLUME_CHUVA 2 // Constante para alerta de volume de chuva
+#define ALERTA_AMBOS 3       // Constante para alerta duplo (nível + volume)
 
-QueueHandle_t xQueueJoyX;
-QueueHandle_t xQueueJoyY;
+// Variáveis compartilhadas entre tarefas
+volatile uint8_t tipo_alerta = 0;            // Tipo de alerta ativo (define qual dos três acima está ocorrendo)
+volatile bool alerta_sonoro_ativo = false;  // Indica se o buzzer está ativo
+volatile bool alert_triggered = false;     // Indica se o alerta já foi disparado
+volatile bool needs_display_clear = false;// Indica se o display precisa ser limpo
+volatile bool buzzer_active = false;     // Indica se o buzzer está atualmente tocando
 
-// System mode control
-typedef enum {
-    NORMAL_MODE,
-    ALERT_MODE
+#define green 11 // Pino do LED verde (PWM)
+#define blue 12 // Pino do LED azul (PWM)
+#define red 13 // Pino do LED vermelho
+
+QueueHandle_t xQueueJoyX;  // Fila para comunicação do valor do joystick X entre tarefas
+QueueHandle_t xQueueJoyY; // Fila para comunicação do valor do joystick Y entre tarefas
+
+// Enumeração para os modos do sistema
+typedef enum 
+{
+    NORMAL_MODE, // Modo normal de funcionamento
+    ALERT_MODE  // Modo de alerta
 } system_mode_t;
 
-system_mode_t current_mode = NORMAL_MODE;
+system_mode_t current_mode = NORMAL_MODE; // Variável que armazena o modo atual do sistema
 
-void iniciar_rgb() {
+void iniciar_rgb() 
+{
     gpio_init(red);
     gpio_set_dir(red, GPIO_OUT);
 }
@@ -87,6 +87,7 @@ void vJoy_x_task(void *params)
     
 }
 
+//Tarefa do pwm do led azul
 void vLedBlueTask(void *params)
 {
     gpio_set_function(blue, GPIO_FUNC_PWM);   // Configura GPIO como PWM
@@ -116,6 +117,7 @@ void vLedBlueTask(void *params)
     }
 }
 
+//Tarefa do pwm do led verde
 void vLedGreenTask(void *params)
 {
     gpio_set_function(green, GPIO_FUNC_PWM);   // Configura GPIO como PWM
@@ -164,6 +166,7 @@ void vLedRedTask(void *params)
     }
 }
 
+// Tarefa do desenho de alerta na matriz
 void vDesenhoTask(void *params)
 {
     while (true)
@@ -208,7 +211,7 @@ void vAlertTask(void *params) {
     }
 }
 
-// Task de Display 
+// Task de exibição no Display 
 void vDisplayTask(void *params) {
     char displayText[50];
     uint16_t prev_x = 0xFFFF, prev_y = 0xFFFF;

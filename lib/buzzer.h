@@ -13,7 +13,8 @@ void iniciar_buzzer()
     gpio_set_dir(buzzerA, GPIO_OUT);
 }
 
-void tocar_nota(int frequencia, int duracao) {
+void tocar_nota(int frequencia, int duracao) 
+{
     if (frequencia == 0) {
         gpio_put(buzzerA, 0);
         return;
