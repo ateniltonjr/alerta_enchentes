@@ -33,10 +33,12 @@
 
 ---
 
-## ⚙️ Compilação e Upload
+### ⚙️ Compilação e Upload
 ### Pré-requisitos
 - [SDK do Raspberry Pi Pico](https://github.com/raspberrypi/pico-sdk)
+- 
 - [Toolchain ARM GCC](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm)
+- 
 - CMake ≥ 3.12
 
 ### Passo a Passo
