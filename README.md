@@ -40,7 +40,7 @@
 - CMake ≥ 3.12
 
 ### Passo a Passo
-```bash
+bash
 # Clone o repositório
 git clone https://github.com/seuusuario/alerta_enchentes.git
 cd alerta_enchentes
@@ -70,5 +70,6 @@ vJoy_x_task	Leitura do eixo X (nível da água)
 vLedGreenTask	Controle PWM do LED verde
 vAlertTask	Verificação de condições de alerta
 vBuzzerTask	Geração de sinais sonoros
+
 🎥 Vídeo Demonstrativo
 Assista no YouTube (Substituir VIDEO_ID pelo link real)
