@@ -60,13 +60,13 @@ https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 
 Substitua isso:
 
-[set(FREERTOS_KERNEL_PATH "C:/Users/ateni/CODIGOS/TESTES/FreeRTOS-Kernel/")](#)
+```set(FREERTOS_KERNEL_PATH "C:/Users/ateni/CODIGOS/TESTES/FreeRTOS-Kernel/")```
 
 por isso:
 
-[set(FREERTOS_KERNEL_PATH "C:/caminho/correto/para/FreeRTOS-Kernel")](#)
+```set(FREERTOS_KERNEL_PATH "C:/caminho/correto/para/FreeRTOS-Kernel")```
 
-Apos isso, na extensão do raspberry pi pico, clique na opção [Clean Cmake]() para atualizar a build.
+Apos isso, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``` para atualizar a build.
 
 Feito esta etapa:
 
