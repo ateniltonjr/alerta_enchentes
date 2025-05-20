@@ -28,9 +28,10 @@
 |------------|-----------|
 | **Placa BitDog Lab** | RP2040 com joystick integrado |
 | **LEDs** | RGB (GPIO 11, 12, 13) |
-| **Buzzer** | Ativo em GPIO definido na lib |
-| **Display OLED** | 128x64 pixels (I²C) |
-| **Matriz de LEDs** | 5x5 para ícones de alerta |
+| **Buzzer** | GPIO 21 |
+| **Display OLED** | 128x64 pixels (I²C) SDA GPIO 14 e SCL GPIO 15|
+| **Matriz de LEDs** | 5x5 para ícones de alerta - GPIO 7|
+| **Botão B** | Para o modo bootsel - GPIO 6|
 
 ---
 
@@ -68,7 +69,7 @@ por isso:
 
 - Apos esta etapa, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``` para atualizar a build.
 
-- Feito esta etapa: conecte a placa ao computador, compile e envie para a placa.
+- Agora: conecte a placa ao computador, compile e envie.
 
 ## 🎥 Vídeo Demonstrativo
 Assista no YouTube
