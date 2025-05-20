@@ -54,11 +54,9 @@ bash
 
 - Importe o projeto com a extensão do raspberry pi pico
 
+- Caso não tenha baixado FreeRTOS, faça o download do zip e extraia por meio do link: [FreeRTOS/FreeRTOS-Kernel](https://github.com/FreeRTOS/FreeRTOS-Kernel.git)
+
 - No CmakeLists.txt, susbtitua o endereço do FreeRTOSS-Kernel pelo local em que esteja do seu computador.
-
-- Caso não tenha baixado, faça o download do zip e extraia por meio do link:
-
-[FreeRTOS/FreeRTOS-Kernel](https://github.com/FreeRTOS/FreeRTOS-Kernel.git)
 
 Substitua isso:
 
@@ -68,7 +66,7 @@ por isso:
 
 ```set(FREERTOS_KERNEL_PATH "C:/caminho/correto/para/FreeRTOS-Kernel")```
 
-- Apos isso, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``` para atualizar a build.
+- Apos esta etapa, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``` para atualizar a build.
 
 - Feito esta etapa: conecte a placa ao computador, compile e envie para a placa.
 
