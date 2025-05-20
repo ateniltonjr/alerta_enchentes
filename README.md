@@ -72,6 +72,6 @@ Apos isso, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``
 
 Feito esta etapa: conecte a placa ao computador, compile e envie para a placa.
 
-🎥 Vídeo Demonstrativo
+## 🎥 Vídeo Demonstrativo
 Assista no YouTube
 [Vídeo](https://www.youtube.com/watch?v=K96oKxeMri0)
