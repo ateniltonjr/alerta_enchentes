@@ -1,5 +1,9 @@
 ![Capa do Projeto](https://github.com/user-attachments/assets/f2a5c9b8-6208-4723-8f46-1d74be421827)
-# 🌊 Estação de Alerta de Enchentes com RP2040
+# Estação de Alerta de Enchentes com RP2040
+
+### **Autor:** Atenilton S. Souza Júnior
+
+**GitHub:** ateniltonjr
 
 **Projeto desenvolvido por Atenilton Júnior**  
 
@@ -46,9 +50,9 @@
 
 bash
 
-# Clone o repositório
+### Clone o repositório
 
-```git clone https://github.com/seuusuario/alerta_enchentes.git```
+```git clone https://github.com/ateniltonjr/alerta_enchentes.git```
 
 Importe o projeto com a extensão do raspberry pi pico
 
@@ -56,7 +60,7 @@ No CmakeLists.txt, susbtitua o endereço do FreeRTOSS-Kernel pelo local em que e
 
 Caso não tenha baixado, faça o download do zip e extraia por meio do link:
 
-https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[FreeRTOS/FreeRTOS-Kernel](https://github.com/FreeRTOS/FreeRTOS-Kernel.git)
 
 Substitua isso:
 
@@ -68,12 +72,7 @@ por isso:
 
 Apos isso, na extensão do raspberry pi pico, clique na opção ```Clean Cmake``` para atualizar a build.
 
-Feito esta etapa:
-
-Conecte a placa ao computador.
-
-Compile e envie para a placa.
-
+Feito esta etapa: conecte a placa ao computador, compile e envie para a placa.
 
 🎥 Vídeo Demonstrativo
 Assista no YouTube
