@@ -5,8 +5,6 @@
 
 **GitHub:** ateniltonjr
 
-**Projeto desenvolvido por Atenilton Júnior**  
-
 ## 📌 Sumário
 - [Funcionalidades](#-funcionalidades)
 - [Hardware Necessário](#-hardware-necessário)
